@@ -320,8 +320,15 @@ func (hc HomeController) Api(url string) {
 		for _, element := range result {
 			i, _ := strconv.ParseFloat(trade.P, 32)
 			// fmt.Println(trade.P, int(i))
+			fmt.Println("price not reached, current price", i, " alert set by user : ", element.Username)
 			if element.Price == int(i){
-				fmt.Println("price reached")
+				us := models.User{}
+				hc.session.DB("mongo-golang").C("users").Find(bson.M{"username": element.Username}).One(&us)
+				fmt.Println("price reached", element.Price, " alert set by user : ", element.Username, " , email : ", us.Email)
+				
+				// ms := mailSender.NewMailNotify(host, port , username, password, "Price reach notification", "parthnamdevpm12345@gmail.com", "soham2112@gmail.com")
+				// ms.Send("Bitcoin price has reached to your set status")
+				
 			}
 		}
 		
