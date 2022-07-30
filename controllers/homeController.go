@@ -290,25 +290,25 @@ func (hc HomeController) Api(url string) {
 	if err != nil {
 		panic(err)
 	}
-	input := make(chan Trade)                    // 1️⃣
+	input := make(chan Trade)                   
 
-	go func() {                                  // 2️⃣ 
+	go func() {                                 
 		// read from the websocket
 		for {
-		_, message, err := c.ReadMessage()   // 3️⃣
+		_, message, err := c.ReadMessage()   
 		if err != nil {
 			break
 		}
 		// unmarshal the message
 		var trade Trade
-		json.Unmarshal(message, &trade)      // 4️⃣
+		json.Unmarshal(message, &trade)      
 		// send the trade to the channel
 		// fmt.Println(trade)
 		
 		input <- trade         
 		}
 		close(input)   
-		                     // 6️⃣
+		                     
 	}()
 	defer c.Close()
 	
