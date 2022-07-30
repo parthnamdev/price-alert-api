@@ -226,17 +226,6 @@ func (hc HomeController) Home(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(result)
 }
 
-// type Trade struct {
-// 	Exchange  string  `json:"exchange"`
-// 	Base      string  `json:"base"`
-// 	Quote     string  `json:"quote"`
-// 	Direction string  `json:"direction"`
-// 	Price     float64 `json:"price"`
-// 	Volume    int64   `json:"volume"`
-// 	Timestamp int64   `json:"timestamp"`
-// 	PriceUsd  float64 `json:"priceUsd"`
-// }
-
 type Trade struct {
     e  string// Event type
     E int         // Event time
@@ -249,43 +238,6 @@ type Trade struct {
   }
 
 func (hc HomeController) Api(url string) {
-	// response, err := http.Get(url)
-	// cookie, err := r.Cookie("token")
-	// if err != nil {
-	// 	if err == http.ErrNoCookie {
-	// 		w.WriteHeader(http.StatusUnauthorized)
-	// 		return
-	// 	}
-	// 	w.WriteHeader(http.StatusBadRequest)
-	// 	return
-	// }
-
-	// tokenStr := cookie.Value
-
-	// claims := &models.Claims{}
-
-	// tkn, err := jwt.ParseWithClaims(tokenStr, claims,
-	// 	func(t *jwt.Token) (interface{}, error) {
-	// 		return jwtKey, nil
-	// 	})
-
-	// if err != nil {
-	// 	if err == jwt.ErrSignatureInvalid {
-	// 		// w.WriteHeader(http.StatusUnauthorized)
-	// 		return
-	// 	}
-	// 	// w.WriteHeader(http.StatusBadRequest)
-	// 	return
-	// }
-
-	// if !tkn.Valid {
-	// 	// w.WriteHeader(http.StatusUnauthorized)
-	// 	return
-	// }
-	// fmt.Println(claims.Username);
-	// result := []models.Alert{}
-	// hc.session.DB("mongo-golang").C("alerts").Find(bson.M{"username": claims.Username}).All(&result)
-
 	c, _, err := websocket.DefaultDialer.Dial(url, nil)
 	if err != nil {
 		panic(err)
