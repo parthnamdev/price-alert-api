@@ -4,12 +4,15 @@ import (
 	"alertapp/price-alert/models"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
+	"strconv"
 
 	// "github.com/gorilla/mux"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
+	"github.com/gorilla/websocket"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 )
@@ -205,9 +208,10 @@ func (hc HomeController) Home(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
-
+	// fmt.Println(claims.Username);
+	
 	result := []models.Alert{}
-	hc.session.DB("mongo-golang").C("alerts").Find(bson.M{}).All(&result)
+	hc.session.DB("mongo-golang").C("alerts").Find(bson.M{"username": claims.Username}).All(&result)
 	// fmt.Fprintf(w, "%s\n", `{
 	// 	"success": "true",
 	// 	"message": "data fetched",
@@ -215,5 +219,159 @@ func (hc HomeController) Home(w http.ResponseWriter, r *http.Request) {
 	// 		"result":
 	// 	},
 	// }`)
+
+	
+	
+
 	json.NewEncoder(w).Encode(result)
+}
+
+// type Trade struct {
+// 	Exchange  string  `json:"exchange"`
+// 	Base      string  `json:"base"`
+// 	Quote     string  `json:"quote"`
+// 	Direction string  `json:"direction"`
+// 	Price     float64 `json:"price"`
+// 	Volume    int64   `json:"volume"`
+// 	Timestamp int64   `json:"timestamp"`
+// 	PriceUsd  float64 `json:"priceUsd"`
+// }
+
+type Trade struct {
+    e  string// Event type
+    E int         // Event time
+    s string         // Symbol
+	p string      // Mark price
+    i string //     // Index price
+    P string //      // Estimated Settle Price, only useful in the last hour before the settlement starts
+    r string //        // Funding rate
+    T int //         // Next funding time
+  }
+
+func (hc HomeController) Api(url string) {
+	// response, err := http.Get(url)
+	// cookie, err := r.Cookie("token")
+	// if err != nil {
+	// 	if err == http.ErrNoCookie {
+	// 		w.WriteHeader(http.StatusUnauthorized)
+	// 		return
+	// 	}
+	// 	w.WriteHeader(http.StatusBadRequest)
+	// 	return
+	// }
+
+	// tokenStr := cookie.Value
+
+	// claims := &models.Claims{}
+
+	// tkn, err := jwt.ParseWithClaims(tokenStr, claims,
+	// 	func(t *jwt.Token) (interface{}, error) {
+	// 		return jwtKey, nil
+	// 	})
+
+	// if err != nil {
+	// 	if err == jwt.ErrSignatureInvalid {
+	// 		// w.WriteHeader(http.StatusUnauthorized)
+	// 		return
+	// 	}
+	// 	// w.WriteHeader(http.StatusBadRequest)
+	// 	return
+	// }
+
+	// if !tkn.Valid {
+	// 	// w.WriteHeader(http.StatusUnauthorized)
+	// 	return
+	// }
+	// fmt.Println(claims.Username);
+	// result := []models.Alert{}
+	// hc.session.DB("mongo-golang").C("alerts").Find(bson.M{"username": claims.Username}).All(&result)
+
+	c, _, err := websocket.DefaultDialer.Dial(url, nil)
+	if err != nil {
+		panic(err)
+	}
+	input := make(chan Trade)                    // 1️⃣
+
+	go func() {                                  // 2️⃣ 
+		// read from the websocket
+		for {
+		_, message, err := c.ReadMessage()   // 3️⃣
+		if err != nil {
+			break
+		}
+		// unmarshal the message
+		var trade Trade
+		json.Unmarshal(message, &trade)      // 4️⃣
+		// send the trade to the channel
+		// fmt.Println(trade)
+		
+		input <- trade         
+		}
+		close(input)   
+		                     // 6️⃣
+	}()
+	defer c.Close()
+	
+	for trade := range input {
+		json.Marshal(trade)
+		result := []models.Alert{}
+		hc.session.DB("mongo-golang").C("alerts").Find(bson.M{"status": "created"}).All(&result)
+
+		for _, element := range result {
+			i, _ := strconv.ParseFloat(trade.P, 32)
+			// fmt.Println(trade.P, int(i))
+			if element.Price == int(i){
+				fmt.Println("price reached")
+			}
+		}
+		
+	}
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	return 
+}
+
+var upgrader = websocket.Upgrader{
+    ReadBufferSize:  1024,
+    WriteBufferSize: 1024,
+}
+
+
+func wsEndpoint(w http.ResponseWriter, r *http.Request) {
+    upgrader.CheckOrigin = func(r *http.Request) bool { return true }
+
+    // upgrade this connection to a WebSocket
+    // connection
+    ws, err := upgrader.Upgrade(w, r, nil)
+    if err != nil {
+        log.Println(err)
+    }
+
+    log.Println("Client Connected")
+    err = ws.WriteMessage(1, []byte("Hi Client!"))
+    if err != nil {
+        log.Println(err)
+    }
+    // listen indefinitely for new messages coming
+    // through on our WebSocket connection
+    reader(ws)
+}
+func reader(conn *websocket.Conn) {
+    for {
+    // read in a message
+        messageType, p, err := conn.ReadMessage()
+        if err != nil {
+            log.Println(err)
+            return
+        }
+    // print out that message for clarity
+        fmt.Println(string(p))
+
+        if err := conn.WriteMessage(messageType, p); err != nil {
+            log.Println(err)
+            return
+        }
+
+    }
 }

@@ -1,11 +1,13 @@
 package main
 
 import (
-    "fmt"
-    "net/http"
-    "github.com/gorilla/mux"
-	"gopkg.in/mgo.v2"
 	"alertapp/price-alert/controllers"
+	"fmt"
+	// "log"
+	"net/http"
+
+	"github.com/gorilla/mux"
+	"gopkg.in/mgo.v2"
 	// "go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -25,6 +27,8 @@ func main() {
     r.HandleFunc("/alert/create", homeController.CreateAlert).Methods("POST")
 	r.HandleFunc("/alert/delete", homeController.DeleteAlert).Methods("POST")
 	fmt.Println("running on port 8000")
+	homeController.Api("wss://stream.binancefuture.com/ws/btcusdt@markPrice")
+	
     http.ListenAndServe(":8000", r)
 	
 }
