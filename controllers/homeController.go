@@ -320,7 +320,7 @@ func (hc HomeController) Api(url string) {
 		for _, element := range result {
 			i, _ := strconv.ParseFloat(trade.P, 32)
 			// fmt.Println(trade.P, int(i))
-			fmt.Println("price not reached, current price", i, " alert set by user : ", element.Username)
+			fmt.Println("price not reached, current price", i, " alert set by user : ", element.Username, " at : ", element.Price)
 			if element.Price == int(i){
 				us := models.User{}
 				hc.session.DB("mongo-golang").C("users").Find(bson.M{"username": element.Username}).One(&us)
